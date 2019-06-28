@@ -1,9 +1,10 @@
 # June 23, 2019
 
 CFLAGS := -O2 -g
-CFLAGS += -Wall -Wextra -pipe -fsanitize=address
+CFLAGS += -Wall -Wextra -pipe
+# CFLAGS += -fsanitize=address
 LFLAGS := -O2 -g
-LFLAGS += -fsanitize=address
+# LFLAGS += -fsanitize=address
 
 TARGET := agent
 

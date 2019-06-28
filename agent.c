@@ -135,8 +135,6 @@ void dispatch() {
         break;
 
     default:
-        print_info("agent", "select: x");
-
         for (module_t * m = modules; m->name; m++) {
             if (m->pid != 0 && FD_ISSET(m->stdout, &rfds)) {
                 char buffer[BUFFER_SIZE];
@@ -157,7 +155,7 @@ void dispatch() {
                     char * token = strtok(buffer + offset, "\n");
 
                     while (token) {
-                        print_info("agent", "    -------- (%s) %s", m->name, token);
+                        print_info("agent", "[%s] %s", m->name, token);
                         offset = token + strlen(token) - buffer;
                         token = strtok(NULL, "\n");
                     }

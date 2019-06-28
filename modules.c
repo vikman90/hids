@@ -5,6 +5,8 @@
 void report(const char * name, int sock) {
     nonblock(sock);
 
+    setlinebuf(stdout);
+
     while (1) {
         unsigned int x;
         getrandom(&x, sizeof(x), 0);
@@ -36,7 +38,6 @@ void report(const char * name, int sock) {
             abort();
         }
 
-        print_info(name, "Sending %u", x);
         printf("%u\n", x);
         sleep(5);
     }

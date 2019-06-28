@@ -176,12 +176,13 @@ void watchdog(module_t * m) {
         break;
 
     default:
+        close(m->stdin);
+        close(m->stdout);
+        close(m->sock);
+
         if (WIFEXITED(status)) {
             print_warn("agent", "%s exited with code %d", m->name, WEXITSTATUS(status));
             m->pid = 0;
-            close(m->stdin);
-            close(m->stdout);
-            close(m->sock);
         } else if (WIFSIGNALED(status)) {
             print_warn("agent", "%s terminated by signal %s. Restarting module", m->name, strsignal(WTERMSIG(status)));
             spawn(m);

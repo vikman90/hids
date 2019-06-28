@@ -3,8 +3,6 @@
 #include "tree.h"
 
 void report(const char * name, int sock) {
-    nonblock(sock);
-
     setlinebuf(stdout);
 
     while (1) {
@@ -12,7 +10,6 @@ void report(const char * name, int sock) {
         getrandom(&x, sizeof(x), 0);
         x = (double)x / UINT_MAX * 50;
 
-/*
         switch (x) {
         case 0:
             print_error(name, "This module should be disabled. Stopping");
@@ -22,24 +19,38 @@ void report(const char * name, int sock) {
             print_error(name, "Random issue. Stopping");
             abort();
         }
-*/
-
-        char buffer[1024];
-
-        switch (read(sock, buffer, sizeof(buffer))) {
-        case -1:
-            // Nothing available
-            break;
-        case 0:
-            print_info(name, "Agent exited. Closing");
-            exit(EXIT_SUCCESS);
-        default:
-            print_critical(name, "Unexpected data received via socket");
-            abort();
-        }
 
         printf("%u\n", x);
-        sleep(5);
+
+        // Wait socket
+
+        fd_set rfds;
+        struct timeval timeout = { .tv_sec = 5 };
+        char buffer[1024];
+
+        FD_ZERO(&rfds);
+        FD_SET(sock, &rfds);
+
+        switch (select(sock + 1, &rfds, NULL, NULL, &timeout)) {
+        case -1:
+            critical(name, "select");
+
+        case 0:
+            break;
+
+        default:
+            switch (read(sock, buffer, sizeof(buffer))) {
+            case -1:
+                critical(name, "Cannot read socket");
+
+            case 0:
+                print_info(name, "Agent exited. Closing");
+                exit(EXIT_SUCCESS);
+
+            default:
+                print_warn(name, "Unexpected data received via socket");
+            }
+        }
     }
 }
 

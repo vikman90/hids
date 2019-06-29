@@ -65,6 +65,7 @@ FILE * open_logfile(logfile_t * file) {
             file->warn = 1;
         }
 
+        file->offset = 0;
         return NULL;
     }
 
@@ -76,6 +77,7 @@ FILE * open_logfile(logfile_t * file) {
             file->warn = 1;
         }
 
+        file->offset = 0;
         fclose(fp);
         return NULL;
     }
@@ -86,6 +88,7 @@ FILE * open_logfile(logfile_t * file) {
             file->warn = 1;
         }
 
+        file->offset = 0;
         fclose(fp);
         return NULL;
     }
@@ -106,11 +109,8 @@ FILE * open_logfile(logfile_t * file) {
         print_info("Log file has been shrunk: %s", file->path);
         file->offset = 0;
     } else if (fseek(fp, file->offset, SEEK_SET) == -1) {
-        if (!file->warn) {
-            print_error("Cannot set file offset '%s': %s", file->path, strerror(errno));
-        }
-
-        file->warn = 1;
+        print_error("Cannot set file offset '%s': %s", file->path, strerror(errno));
+        file->error = 1;
         fclose(fp);
         return NULL;
     }

@@ -18,6 +18,9 @@ module_t modules[] = {
     { .name = NULL, NULL }
 };
 
+static module_t agent = { .name = "agent" };
+module_t * cur_module = &agent;
+
 void handler(int signum) {
     switch (signum) {
     case SIGINT:
@@ -137,29 +140,18 @@ void dispatch() {
     default:
         for (module_t * m = modules; m->name; m++) {
             if (m->pid != 0 && FD_ISSET(m->stdout, &rfds)) {
-                char buffer[BUFFER_SIZE];
-                size_t offset = 0;
-                ssize_t count = read(m->stdout, buffer + offset, sizeof(buffer) - offset - 1);
-
-                switch (count) {
+                switch (read_msg(m->stdout, &m->stdout_buf)) {
                 case -1:
-                    critical("agent", "Cannot read module's stdin");
-
-                case 0:
-                    print_warn("agent", "Cannot communicate with %s", m->name);
-                    watchdog(m);
+                    // Messge incomplete
                     continue;
 
-                default:
-                    buffer[offset + count] = '\0';
-                    char * token = strtok(buffer + offset, "\n");
-
-                    while (token) {
-                        print_info("agent", "[%s] %s", m->name, token);
-                        offset = token + strlen(token) - buffer;
-                        token = strtok(NULL, "\n");
-                    }
+                case 0:
+                    watchdog(m);
+                    continue;
                 }
+
+                print_info("agent", "[%s] %s", m->name, m->stdout_buf.data);
+                buffer_clear(&m->stdout_buf);
             }
         }
     }
@@ -209,4 +201,76 @@ void nonblock(int fd) {
     if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
         critical("agent", "Cannot set file descriptor flag");
     }
+}
+
+void set_name(const char * name) {
+    char buffer[16];
+
+    snprintf(buffer, sizeof(buffer), "agent-%s", name);
+
+    if (prctl(PR_SET_NAME, buffer, 0, 0, 0) == -1) {
+        critical(name, "prctl");
+    }
+}
+
+void write_msg(int fd, const char * data, size_t count) {
+    write(fd, &count, sizeof(count));
+    write(fd, data, count);
+}
+
+ssize_t read_msg(int fd, buffer_t * buffer) {
+    ssize_t count;
+
+    if (buffer->recv == 0) {
+        // New message
+        count = read(fd, &buffer->length, sizeof(size_t));
+
+        switch (count) {
+        case -1:
+        case 0:
+            return count;
+        }
+
+        if (count != sizeof(size_t)) {
+            print_critical(cur_module->name, "Receiving %zd / %zu bytes. Pipe is not atomic!", count, sizeof(size_t));
+            abort();
+        }
+
+        // Extend buffer
+
+        if (buffer->length > buffer->alloc) {
+            buffer->data = realloc(buffer->data, buffer->length + 1);
+
+            if (buffer->data == NULL) {
+                critical(cur_module->name, "Cannot extend memory");
+            }
+
+            buffer->alloc = buffer->length;
+        }
+    }
+
+    // Read payload
+
+    count = read(fd, buffer->data + buffer->recv, buffer->length - buffer->recv);
+
+    switch (count) {
+    case -1:
+    case 0:
+        return count;
+    }
+
+    buffer->recv += count;
+
+    if (buffer->recv == buffer->length) {
+        buffer->recv = 0;
+        buffer->data[buffer->length] = '\0';
+        return count;
+    } else {
+        return -1;
+    }
+}
+
+void buffer_clear(buffer_t * buffer) {
+    free(buffer->data);
+    memset(buffer, 0, sizeof(buffer_t));
 }

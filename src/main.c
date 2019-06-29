@@ -5,7 +5,6 @@
 int main() {
 
     // Set up disposer
-    // atexit(kill_modules);
     set_handler(SIGINT, handler);
     set_handler(SIGTERM, handler);
 

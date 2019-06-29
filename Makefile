@@ -6,20 +6,23 @@ CFLAGS += -Wall -Wextra -pipe
 LFLAGS := -O2 -g
 # LFLAGS += -fsanitize=address
 
-TARGET := agent
+TARGET := bin/agent
 
-SOURCES = $(wildcard *.c)
-HEADERS = $(wildcard *.h)
+SOURCES = $(wildcard src/*.c)
+HEADERS = $(wildcard src/*.h)
 OBJECTS = $(SOURCES:.c=.o)
 
 .PHONY: all clean
 
-all: $(TARGET)
+all: bin $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(LFLAGS) -o $@ $^
 
 $(OBJECTS): $(HEADERS)
+
+bin:
+	mkdir $@
 
 clean:
 	$(RM) $(TARGET) $(OBJECTS)

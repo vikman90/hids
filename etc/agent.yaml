@@ -1,0 +1,6 @@
+logcollector:
+  files:
+    - /var/log/secure
+    - /var/log/messages
+    - /var/log/auth.log
+    - /var/log/syslog

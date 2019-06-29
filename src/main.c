@@ -2,11 +2,19 @@
 
 #include "tree.h"
 
-int main() {
+int main(__attribute__((unused)) int argc, char ** argv) {
 
     // Set up disposer
     set_handler(SIGINT, handler);
     set_handler(SIGTERM, handler);
+
+    set_cwd(argv[0]);
+
+    // Read configuration
+
+    if (parse_config() != 0) {
+        return EXIT_FAILURE;
+    }
 
     // Fork modules
 
@@ -14,7 +22,7 @@ int main() {
         spawn(m);
     }
 
-    print_info("agent", "Started");
+    print_info("Started");
 
     // Watchdog
 

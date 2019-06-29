@@ -3,9 +3,6 @@
 #include "tree.h"
 
 void report() {
-
-    set_name(cur_module->name);
-
     while (1) {
         unsigned int x;
         getrandom(&x, sizeof(x), 0);
@@ -27,14 +24,14 @@ void report() {
 void dispatch_socket() {
     char buffer[BUFFER_SIZE];
     fd_set rfds;
-    struct timeval timeout = { .tv_sec = 5 };
+    struct timeval timeout = { .tv_sec = 60 };
 
     FD_ZERO(&rfds);
     FD_SET(cur_module->sock, &rfds);
 
     switch (select(cur_module->sock + 1, &rfds, NULL, NULL, &timeout)) {
     case -1:
-        critical(cur_module->name, "select");
+        critical("select");
 
     case 0:
         break;
@@ -42,86 +39,69 @@ void dispatch_socket() {
     default:
         switch (read(cur_module->sock, buffer, sizeof(buffer))) {
         case -1:
-            critical(cur_module->name, "Cannot read socket");
+            critical("Cannot read socket");
 
         case 0:
-            print_info(cur_module->name, "Agent exited. Closing");
+            print_info("Agent exited. Closing");
             exit(EXIT_SUCCESS);
 
         default:
-            print_warn(cur_module->name, "Unexpected data received via socket");
+            print_warn("Unexpected data received via socket");
         }
     }
 }
 
-int fim_main(module_t * module) {
-    cur_module = module;
+int fim_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int logcollector_main(module_t * module) {
-    cur_module = module;
+int sca_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int sca_main(module_t * module) {
-    cur_module = module;
+int openscap_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int openscap_main(module_t * module) {
-    cur_module = module;
+int osquery_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int osquery_main(module_t * module) {
-    cur_module = module;
+int rootcheck_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int rootcheck_main(module_t * module) {
-    cur_module = module;
+int ciscat_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int ciscat_main(module_t * module) {
-    cur_module = module;
+int inventory_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int inventory_main(module_t * module) {
-    cur_module = module;
+int aws_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int aws_main(module_t * module) {
-    cur_module = module;
+int azure_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int azure_main(module_t * module) {
-    cur_module = module;
+int docker_main() {
     report();
     return EXIT_SUCCESS;
 }
 
-int docker_main(module_t * module) {
-    cur_module = module;
-    report();
-    return EXIT_SUCCESS;
-}
-
-int command_main(module_t * module) {
-    cur_module = module;
+int command_main() {
     report();
     return EXIT_SUCCESS;
 }

@@ -25,10 +25,10 @@ void handler(int signum) {
     switch (signum) {
     case SIGINT:
     case SIGTERM:
-        print_info("agent", "Closing service");
+        print_info("Closing service");
         break;
     default:
-        print_info("", "Signaled: %s", strsignal(signum));
+        print_info("Signaled: %s", strsignal(signum));
     }
 
     exit(EXIT_SUCCESS);
@@ -38,7 +38,7 @@ void set_handler(int signum, void (*handler)(int)) {
     struct sigaction sa = { .sa_handler = handler };
 
     if (sigaction(signum, &sa, NULL) == -1) {
-        critical("agent", "sigaction");
+        critical("sigaction");
     }
 }
 
@@ -49,7 +49,7 @@ void kill_modules() {
         kill(m->pid, SIGTERM);
 
         if (waitpid(m->pid, &status, 0) == -1) {
-            critical("agent", "waitpid");
+            critical("waitpid");
         }
     }
 }
@@ -60,18 +60,18 @@ void spawn(module_t * m) {
     int sock[2];
 
     if (pipe(pipein) == -1 || pipe(pipeout) == -1) {
-        critical("agent", "Cannot create a pipe");
+        critical("Cannot create a pipe");
     }
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sock) == -1) {
-        critical("agent", "Cannot create a socket");
+        critical("Cannot create a socket");
     }
 
     m->pid = fork();
 
     switch (m->pid) {
     case -1:
-        critical("agent", "Cannot create a subprocess");
+        critical("Cannot create a subprocess");
 
     case 0:
         // Child
@@ -94,9 +94,11 @@ void spawn(module_t * m) {
         close(sock[1]);
 
         setlinebuf(stdout);
+        cur_module = m;
+        set_name(m->name);
 
         // Run
-        _exit(m->main(m));
+        _exit(m->main());
 
     default:
         // Parent
@@ -104,7 +106,7 @@ void spawn(module_t * m) {
         m->stdin = fdopen(pipein[1], "w");
 
         if (m->stdin == NULL) {
-            critical("agent", "Cannot create file for pipe");
+            critical("Cannot create file for pipe");
         }
 
         close(pipein[0]);
@@ -113,7 +115,7 @@ void spawn(module_t * m) {
         m->stdout = fdopen(pipeout[0], "r");
 
         if (m->stdout == NULL) {
-            critical("agent", "Cannot create file for pipe");
+            critical("Cannot create file for pipe");
         }
 
         cloexec(pipeout[0]);
@@ -132,20 +134,22 @@ void dispatch() {
     FD_ZERO(&rfds);
 
     for (module_t * m = modules; m->name; m++) {
+        int fd = fileno(m->stdout);
+
         if (m->pid == 0) {
             continue;
         }
 
-        FD_SET(fileno(m->stdout), &rfds);
+        FD_SET(fd, &rfds);
 
-        if (fileno(m->stdout) >= nfds) {
-            nfds = fileno(m->stdout) + 1;
+        if (fd >= nfds) {
+            nfds = fd + 1;
         }
     }
 
     switch (select(nfds, &rfds, NULL, NULL, &timeout)) {
     case -1:
-        critical("agent", "select");
+        critical("select");
 
     case 0:
         break;
@@ -160,9 +164,9 @@ void dispatch() {
 
                     if (*end == '\n') {
                         *end = '\0';
-                        print_info("agent", "[%s] %s", m->name, buffer);
+                        print_info("[%s] %s", m->name, buffer);
                     } else {
-                        print_warn("agent", "%s sent an incomplete message", m->name);
+                        print_warn("%s sent an incomplete message", m->name);
                     }
                 } else {
                     watchdog(m);
@@ -177,7 +181,7 @@ void watchdog(module_t * m) {
 
     switch (waitpid(m->pid, &status, WNOHANG)) {
     case -1:
-        critical("agent", "waitpid");
+        critical("waitpid");
 
     case 0:
         break;
@@ -188,17 +192,20 @@ void watchdog(module_t * m) {
         close(m->sock);
 
         if (WIFEXITED(status)) {
-            print_warn("agent", "%s exited with code %d", m->name, WEXITSTATUS(status));
+            if (WEXITSTATUS(status) != 0) {
+                print_warn("%s exited with code %d", m->name, WEXITSTATUS(status));
+            }
+
             m->pid = 0;
         } else if (WIFSIGNALED(status)) {
-            print_warn("agent", "%s terminated by signal %s. Restarting module", m->name, strsignal(WTERMSIG(status)));
+            print_warn("%s terminated by signal %s. Restarting module", m->name, strsignal(WTERMSIG(status)));
             spawn(m);
         }
     }
 }
 
-void critical(const char * tag, const char * s) {
-    print_critical(tag, "%s: %s", s, strerror(errno));
+void critical(const char * s) {
+    print_critical("%s: %s", s, strerror(errno));
     abort();
 }
 
@@ -206,7 +213,7 @@ void cloexec(int fd) {
     int flags = fcntl(fd, F_GETFD);
 
     if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1) {
-        critical("agent", "Cannot set file descriptor flag");
+        critical("Cannot set file descriptor flag");
     }
 }
 
@@ -214,7 +221,7 @@ void nonblock(int fd) {
     int flags = fcntl(fd, F_GETFL);
 
     if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-        critical("agent", "Cannot set file descriptor flag");
+        critical("Cannot set file descriptor flag");
     }
 }
 
@@ -224,68 +231,23 @@ void set_name(const char * name) {
     snprintf(buffer, sizeof(buffer), "agent-%s", name);
 
     if (prctl(PR_SET_NAME, buffer, 0, 0, 0) == -1) {
-        critical(name, "prctl");
+        critical("prctl");
     }
 }
 
-void write_msg(int fd, const char * data, size_t count) {
-    write(fd, &count, sizeof(count));
-    write(fd, data, count);
-}
+void set_cwd(const char * argv0) {
+    char copy[PATH_MAX] = "";
+    char path[PATH_MAX];
 
-ssize_t read_msg(int fd, buffer_t * buffer) {
-    ssize_t count;
+    strncpy(copy, argv0, PATH_MAX - 1);
+    snprintf(path, PATH_MAX, "%s/..", dirname(copy));
 
-    if (buffer->recv == 0) {
-        // New message
-        count = read(fd, &buffer->length, sizeof(size_t));
-
-        switch (count) {
-        case -1:
-        case 0:
-            return count;
-        }
-
-        if (count != sizeof(size_t)) {
-            print_critical(cur_module->name, "Receiving %zd / %zu bytes. Pipe is not atomic!", count, sizeof(size_t));
-            abort();
-        }
-
-        // Extend buffer
-
-        if (buffer->length > buffer->alloc) {
-            buffer->data = realloc(buffer->data, buffer->length + 1);
-
-            if (buffer->data == NULL) {
-                critical(cur_module->name, "Cannot extend memory");
-            }
-
-            buffer->alloc = buffer->length;
-        }
-    }
-
-    // Read payload
-
-    count = read(fd, buffer->data + buffer->recv, buffer->length - buffer->recv);
-
-    switch (count) {
-    case -1:
-    case 0:
-        return count;
-    }
-
-    buffer->recv += count;
-
-    if (buffer->recv == buffer->length) {
-        buffer->recv = 0;
-        buffer->data[buffer->length] = '\0';
-        return count;
-    } else {
-        return -1;
+    if (chdir(path) == -1) {
+        critical("Cannot change directory");
     }
 }
 
-void buffer_clear(buffer_t * buffer) {
-    free(buffer->data);
-    memset(buffer, 0, sizeof(buffer_t));
+int is_regular(const char * path) {
+    struct stat buf;
+    return stat(path, &buf) == -1 ? 0 : S_ISREG(buf.st_mode);
 }

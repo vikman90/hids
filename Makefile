@@ -5,6 +5,7 @@ CFLAGS += -Wall -Wextra -pipe
 # CFLAGS += -fsanitize=address
 LFLAGS := -O2 -g
 # LFLAGS += -fsanitize=address
+LIBS := -lyaml
 
 TARGET := bin/agent
 
@@ -17,7 +18,7 @@ OBJECTS = $(SOURCES:.c=.o)
 all: bin $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(LFLAGS) -o $@ $^
+	$(CC) $(LFLAGS) -o $@ $^ $(LIBS)
 
 $(OBJECTS): $(HEADERS)
 

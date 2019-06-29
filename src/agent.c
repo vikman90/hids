@@ -93,6 +93,14 @@ void spawn(module_t * m) {
         m->sock = sock[0];
         close(sock[1]);
 
+        for (module_t * n = modules; n->name; n++) {
+            if (n != m && n->pid != 0) {
+                fclose(n->stdin);
+                fclose(n->stdout);
+                close(n->sock);
+            }
+        }
+
         setlinebuf(stdout);
         cur_module = m;
         set_name(m->name);

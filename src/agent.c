@@ -30,6 +30,7 @@ void handler(int signum) {
     default:
         print_info("", "Signaled: %s", strsignal(signum));
     }
+
     exit(EXIT_SUCCESS);
 }
 
@@ -54,11 +55,11 @@ void kill_modules() {
 }
 
 void spawn(module_t * m) {
-    int stdin[2];
-    int stdout[2];
+    int pipein[2];
+    int pipeout[2];
     int sock[2];
 
-    if (pipe(stdin) == -1 || pipe(stdout) == -1) {
+    if (pipe(pipein) == -1 || pipe(pipeout) == -1) {
         critical("agent", "Cannot create a pipe");
     }
 
@@ -81,16 +82,18 @@ void spawn(module_t * m) {
 
         // Set stdin and stdout
 
-        dup2(stdin[0], STDIN_FILENO);
-        close(stdin[0]);
-        close(stdin[1]);
+        dup2(pipein[0], STDIN_FILENO);
+        close(pipein[0]);
+        close(pipein[1]);
 
-        dup2(stdout[1], STDOUT_FILENO);
-        close(stdout[0]);
-        close(stdout[1]);
+        dup2(pipeout[1], STDOUT_FILENO);
+        close(pipeout[0]);
+        close(pipeout[1]);
 
         m->sock = sock[0];
         close(sock[1]);
+
+        setlinebuf(stdout);
 
         // Run
         _exit(m->main(m));
@@ -98,13 +101,23 @@ void spawn(module_t * m) {
     default:
         // Parent
 
-        m->stdin = stdin[1];
-        close(stdin[0]);
-        cloexec(stdin[1]);
+        m->stdin = fdopen(pipein[1], "w");
 
-        m->stdout = stdout[0];
-        cloexec(stdout[0]);
-        close(stdout[1]);
+        if (m->stdin == NULL) {
+            critical("agent", "Cannot create file for pipe");
+        }
+
+        close(pipein[0]);
+        cloexec(pipein[1]);
+
+        m->stdout = fdopen(pipeout[0], "r");
+
+        if (m->stdout == NULL) {
+            critical("agent", "Cannot create file for pipe");
+        }
+
+        cloexec(pipeout[0]);
+        close(pipeout[1]);
 
         close(sock[0]);
         m->sock = sock[1];
@@ -123,10 +136,10 @@ void dispatch() {
             continue;
         }
 
-        FD_SET(m->stdout, &rfds);
+        FD_SET(fileno(m->stdout), &rfds);
 
-        if (m->stdout >= nfds) {
-            nfds = m->stdout + 1;
+        if (fileno(m->stdout) >= nfds) {
+            nfds = fileno(m->stdout) + 1;
         }
     }
 
@@ -139,19 +152,21 @@ void dispatch() {
 
     default:
         for (module_t * m = modules; m->name; m++) {
-            if (m->pid != 0 && FD_ISSET(m->stdout, &rfds)) {
-                switch (read_msg(m->stdout, &m->stdout_buf)) {
-                case -1:
-                    // Messge incomplete
-                    continue;
+            if (m->pid != 0 && FD_ISSET(fileno(m->stdout), &rfds)) {
+                char buffer[BUFFER_SIZE];
 
-                case 0:
+                if (fgets(buffer, BUFFER_SIZE, m->stdout)) {
+                    char * end = buffer + strlen(buffer) - 1;
+
+                    if (*end == '\n') {
+                        *end = '\0';
+                        print_info("agent", "[%s] %s", m->name, buffer);
+                    } else {
+                        print_warn("agent", "%s sent an incomplete message", m->name);
+                    }
+                } else {
                     watchdog(m);
-                    continue;
                 }
-
-                print_info("agent", "[%s] %s", m->name, m->stdout_buf.data);
-                buffer_clear(&m->stdout_buf);
             }
         }
     }
@@ -168,8 +183,8 @@ void watchdog(module_t * m) {
         break;
 
     default:
-        close(m->stdin);
-        close(m->stdout);
+        fclose(m->stdin);
+        fclose(m->stdout);
         close(m->sock);
 
         if (WIFEXITED(status)) {

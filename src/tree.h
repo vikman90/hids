@@ -17,6 +17,7 @@
 #include <sys/random.h>
 #include <sys/socket.h>
 #include <sys/prctl.h>
+#include "cJSON.h"
 
 #define print_info(tag, msg, ...) fprintf(stderr, "\e[94m%s: \e[92mINFO:\e[39m " msg "\n", tag, ##__VA_ARGS__)
 #define print_warn(tag, msg, ...) fprintf(stderr, "\e[94m%s: \e[93mWARN:\e[39m " msg "\n", tag, ##__VA_ARGS__)
@@ -36,8 +37,8 @@ typedef struct module_t {
     char * name;
     int (* main)(struct module_t * module);
     pid_t pid;
-    int stdin;
-    int stdout;
+    FILE * stdin;
+    FILE * stdout;
     int sock;
     buffer_t stdout_buf;
 } module_t;
@@ -64,6 +65,7 @@ void set_handler(int signum, void (*handler)(int));
 void kill_modules();
 void spawn(module_t * m);
 void dispatch();
+void dispatch_socket();
 void watchdog(module_t * m);
 __attribute__((noreturn)) void critical(const char * tag, const char * s);
 void cloexec(int fd);
@@ -71,5 +73,6 @@ void nonblock(int fd);
 void set_name(const char * name);
 void write_msg(int fd, const char * data, size_t count);
 ssize_t read_msg(int fd, buffer_t * buffer);
+void buffer_clear(buffer_t * buffer);
 
 #endif

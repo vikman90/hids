@@ -8,7 +8,7 @@ static FILE * open_logfile(logfile_t * file);
 
 int logcollector_main() {
     if (logcollector.length == 0) {
-        print_info("No logcollector items");
+        print_info("No logcollector items defined");
         return EXIT_SUCCESS;
     }
 
@@ -46,7 +46,7 @@ int logcollector_main() {
             fclose(fp);
         }
 
-        sleep(1);
+        dispatch_socket(1);
     }
 
     return EXIT_SUCCESS;

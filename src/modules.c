@@ -13,18 +13,18 @@ void report() {
         cJSON_AddStringToObject(root, "message", MESSAGE);
         cJSON_AddNumberToObject(root, "data", x);
         char * payload = cJSON_PrintUnformatted(root);
-        printf("%s\n", payload);
+        // printf("%s\n", payload);
         free(payload);
         cJSON_Delete(root);
 
-        dispatch_socket();
+        dispatch_socket(60);
     }
 }
 
-void dispatch_socket() {
+void dispatch_socket(time_t timeout_sec) {
     char buffer[BUFFER_SIZE];
     fd_set rfds;
-    struct timeval timeout = { .tv_sec = 60 };
+    struct timeval timeout = { .tv_sec = timeout_sec };
 
     FD_ZERO(&rfds);
     FD_SET(cur_module->sock, &rfds);
@@ -49,11 +49,6 @@ void dispatch_socket() {
             print_warn("Unexpected data received via socket");
         }
     }
-}
-
-int fim_main() {
-    report();
-    return EXIT_SUCCESS;
 }
 
 int sca_main() {

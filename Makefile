@@ -5,7 +5,7 @@ CFLAGS += -Wall -Wextra -pipe
 # CFLAGS += -fsanitize=address
 LFLAGS := -O2 -g
 # LFLAGS += -fsanitize=address
-LIBS := -lyaml
+LIBS := -lyaml -lcrypto
 
 TARGET := bin/agent
 

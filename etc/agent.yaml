@@ -4,3 +4,11 @@ logcollector:
     - /var/log/messages
     - /var/log/auth.log
     - /var/log/syslog
+    - /root/example.log
+    - /proc/self/fd/0
+    - /dev
+fim:
+  size_limit: 1G
+  items:
+    - path: /
+      follow_links: no

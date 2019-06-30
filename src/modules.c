@@ -3,6 +3,8 @@
 #include "tree.h"
 
 void report() {
+    exit(EXIT_SUCCESS);
+
     while (1) {
         unsigned int x;
         getrandom(&x, sizeof(x), 0);
@@ -13,7 +15,7 @@ void report() {
         cJSON_AddStringToObject(root, "message", MESSAGE);
         cJSON_AddNumberToObject(root, "data", x);
         char * payload = cJSON_PrintUnformatted(root);
-        // printf("%s\n", payload);
+        printf("%s\n", payload);
         free(payload);
         cJSON_Delete(root);
 

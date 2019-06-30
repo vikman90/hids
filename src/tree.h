@@ -79,6 +79,7 @@ extern fim_t fim;
 
 extern module_t modules[];
 extern module_t * cur_module;
+extern const char * argv0;
 
 int fim_main();
 int logcollector_main();
@@ -105,7 +106,7 @@ __attribute__((noreturn)) void critical(const char * s);
 void cloexec(int fd);
 void nonblock(int fd);
 void set_name(const char * name);
-void set_cwd(const char * argv0);
+void set_cwd();
 int parse_config();
 int file_sha256(int fd, char sum[SHA256_LEN]);
 

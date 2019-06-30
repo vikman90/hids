@@ -90,23 +90,13 @@ void spawn(module_t * m) {
         close(pipeout[0]);
         close(pipeout[1]);
 
-        m->sock = sock[0];
+        dup2(sock[0], 3);
+        close(sock[0]);
         close(sock[1]);
 
-        for (module_t * n = modules; n->name; n++) {
-            if (n != m && n->pid != 0) {
-                fclose(n->stdin);
-                fclose(n->stdout);
-                close(n->sock);
-            }
-        }
-
-        setlinebuf(stdout);
-        cur_module = m;
-        set_name(m->name);
-
         // Run
-        _exit(m->main());
+        execl(argv0, argv0, m->name, NULL);
+        _exit(127);
 
     default:
         // Parent
@@ -131,6 +121,7 @@ void spawn(module_t * m) {
 
         close(sock[0]);
         m->sock = sock[1];
+        cloexec(m->sock);
     }
 }
 
@@ -243,7 +234,7 @@ void set_name(const char * name) {
     }
 }
 
-void set_cwd(const char * argv0) {
+void set_cwd() {
     char copy[PATH_MAX] = "";
     char path[PATH_MAX];
 

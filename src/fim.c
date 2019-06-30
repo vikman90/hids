@@ -37,8 +37,7 @@ int fim_main() {
         print_info("FIM scan ended. Files: %u. Time: %f seconds.", fim.nfiles, time_diff(tp1, tp0));
         fim_free();
         hdestroy();
-        dispatch_socket(1);
-        return EXIT_SUCCESS;
+        dispatch_socket(60);
     }
 
     return EXIT_SUCCESS;
@@ -152,6 +151,22 @@ void fim_file(int fd, const char * path, struct stat * statbuf) {
     cJSON_AddNumberToObject(jstat, "access_time", statbuf->st_atime);
     cJSON_AddNumberToObject(jstat, "modification_time", statbuf->st_mtime);
     cJSON_AddNumberToObject(jstat, "creation_time", statbuf->st_ctime);
+
+    /* Owner and group */
+
+    struct passwd * owner = getpwuid(statbuf->st_uid);
+
+    if (owner) {
+        cJSON_AddStringToObject(jroot, "owner", owner->pw_name);
+    }
+
+    struct group * group = getgrgid(statbuf->st_gid);
+
+    if (group) {
+        cJSON_AddStringToObject(jroot, "group", group->gr_name);
+    }
+
+    /* SHA256 */
 
     if (statbuf->st_size > 0) {
         if (statbuf->st_size > fim.size_limit) {

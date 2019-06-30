@@ -10,5 +10,5 @@ logcollector:
 fim:
   size_limit: 1G
   items:
-    - path: /
+    - path: /etc
       follow_links: no

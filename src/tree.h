@@ -21,6 +21,8 @@
 #include <sys/socket.h>
 #include <sys/prctl.h>
 #include <dirent.h>
+#include <pwd.h>
+#include <grp.h>
 #include <yaml.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>

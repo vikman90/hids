@@ -11,5 +11,14 @@ fim:
   size_limit: 1G
   max_files: 100000
   follow_links: no
+  real_time: yes
   items:
+    - /bin
+    - /boot
     - /etc
+    - /lib
+    - /lib32
+    - /lib64
+    - /opt
+    - /sbin
+    - /usr

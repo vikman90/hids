@@ -147,6 +147,21 @@ void parse_fim(yaml_document_t * document, yaml_node_t * node) {
             } else {
                 print_warn("Invalid value '%s' at %s:%lu", svalue, CONFIG_FILE, line(value));
             }
+        } else if (strcmp(skey, "real_time") == 0) {
+            if (value->type != YAML_SCALAR_NODE) {
+                print_warn("Invalid node at %s:%lu", CONFIG_FILE, line(value));
+                continue;
+            }
+
+            char *svalue = scalar(value);
+
+            if (strcmp(svalue, "yes") == 0) {
+                fim.real_time = 1;
+            } else if (strcmp(svalue, "no") == 0) {
+                fim.real_time = 0;
+            } else {
+                print_warn("Invalid value '%s' at %s:%lu", svalue, CONFIG_FILE, line(value));
+            }
         } else if (strcmp(skey, "size_limit") == 0) {
             char * svalue = scalar(value);
             char * end;

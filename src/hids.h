@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <sys/prctl.h>
 #include <sys/select.h>
+#include <sys/inotify.h>
 #include <dirent.h>
 #include <pwd.h>
 #include <grp.h>
@@ -76,7 +77,11 @@ typedef struct {
     unsigned nfiles;
     long size_limit;
     unsigned long max_files;
+    int inotify_fd;
+    char ** inotify_wd_array;
+    int inotify_wd_top;
     unsigned int follow_links:1;
+    unsigned int real_time:1;
 } fim_t;
 
 extern logcollector_t logcollector;

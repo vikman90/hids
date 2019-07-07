@@ -11,6 +11,8 @@ static void fim_dir(int fd, const char * path);
 static void fim_file(int fd, const char * path, struct stat * statbuf);
 static void fim_add(const char * path);
 static void fim_free();
+void fim_set_watch(int wd, const char * path);
+void fim_dispatch_inotify();
 
 int fim_main() {
     if (fim.length == 0) {
@@ -27,13 +29,20 @@ int fim_main() {
         fim.max_files = 100000;
     }
 
+    if (fim.real_time) {
+        fim.inotify_fd = inotify_init1(O_NONBLOCK);
+        if (fim.inotify_fd == -1) {
+            critical("Cannot create an inotify instance");
+        }
+    }
+
     for (;;) {
         struct timespec tp0, tp1;
 
         if (fim.follow_links) {
             hcreate(fim.max_files);
         }
-        
+
         clock_gettime(CLOCK_MONOTONIC, &tp0);
 
         for (unsigned i = 0; i < fim.length; i++) {
@@ -41,14 +50,23 @@ int fim_main() {
         }
 
         clock_gettime(CLOCK_MONOTONIC, &tp1);
-        print_info("FIM scan ended. Files: %u. Time: %f seconds.", fim.nfiles, time_diff(tp1, tp0));
-        
+        print_info("FIM scan ended. Time: %f seconds.", time_diff(tp1, tp0));
+
         if (fim.follow_links) {
             fim_free();
             hdestroy();
         }
 
-        dispatch_stdin(60);
+        if (fim.real_time) {
+            print_info("Watching files");
+
+            for (;;) {
+                fim_dispatch_inotify();
+                dispatch_stdin(1);
+            }
+        } else {
+            dispatch_stdin(600);
+        }
     }
 
     return EXIT_SUCCESS;
@@ -135,6 +153,15 @@ void fim_dir(int fd, const char * path) {
     if (dir == NULL) {
         print_error("Cannot open directory '%s': %s", path, strerror(errno));
     } else {
+        if (fim.real_time) {
+            int wd = inotify_add_watch(fim.inotify_fd, path, IN_CLOSE_WRITE | IN_CREATE | IN_DELETE);
+            if (wd == -1) {
+                print_error("Cannot watch %s: %s", path, strerror(errno));
+            } else {
+                fim_set_watch(wd, path);
+            }
+        }
+
         struct dirent * entry;
 
         while ((entry = readdir(dir))) {
@@ -230,4 +257,30 @@ void fim_free() {
     free(fim.files);
     fim.files = NULL;
     fim.nfiles = 0;
+}
+
+void fim_set_watch(int wd, const char * path) {
+    if (wd >= fim.inotify_wd_top) {
+        fim.inotify_wd_array = realloc(fim.inotify_wd_array, sizeof(char *) * (wd + 1));
+        memset(fim.inotify_wd_array + fim.inotify_wd_top, 0, sizeof(char *) * (wd - fim.inotify_wd_top + 1));
+        fim.inotify_wd_top = wd;
+    }
+
+    free(fim.inotify_wd_array[wd]);
+    fim.inotify_wd_array[wd] = strdup(path);
+}
+
+void fim_dispatch_inotify() {
+    char buffer[sizeof(struct inotify_event) + NAME_MAX + 1];
+    struct inotify_event * event;
+    ssize_t count;
+
+    while ((count = read(fim.inotify_fd, buffer, sizeof(buffer))) > 0) {
+        for (unsigned i = 0; i < count; i += sizeof(struct inotify_event) + event->len) {
+            event = (struct inotify_event *)(buffer + i);
+            char path[PATH_MAX];
+            snprintf(path, PATH_MAX, "%s/%s", fim.inotify_wd_array[event->wd], event->name);
+            fim_link(path);
+        }
+    }
 }

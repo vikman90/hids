@@ -5,9 +5,9 @@
 fim_t fim;
 
 static void fim_item(fim_item_t * item);
-static int fim_link(fim_item_t * item, const char * path);
-static void fim_path(fim_item_t * item, const char * path);
-static void fim_dir(fim_item_t * item, int fd, const char * path);
+static int fim_link( const char * path);
+static void fim_path(const char * path);
+static void fim_dir(int fd, const char * path);
 static void fim_file(int fd, const char * path, struct stat * statbuf);
 static void fim_add(const char * path);
 static void fim_free();
@@ -48,7 +48,7 @@ int fim_main() {
 }
 
 void fim_item(fim_item_t * item) {
-    if (fim_link(item, item->path) == -1) {
+    if (fim_link(item->path) == -1) {
         if (!item->warn) {
             print_warn("Cannot read '%s': %s", item->path, strerror(errno));
             item->warn = 1;
@@ -56,29 +56,29 @@ void fim_item(fim_item_t * item) {
     }
 }
 
-int fim_link(fim_item_t * item, const char * path) {
+int fim_link(const char * path) {
     struct stat buf;
 
     if (lstat(path, &buf) == -1) {
         return -1;
     } else if ((buf.st_mode & S_IFMT) == S_IFLNK) {
-        if (item->follow_links) {
+        if (fim.follow_links) {
             char real[PATH_MAX];
 
             if (realpath(path, real)) {
-                fim_path(item, real);
+                fim_path(real);
             } else {
                 return -1;
             }
         }
     } else {
-        fim_path(item, path);
+        fim_path(path);
     }
 
     return 0;
 }
 
-void fim_path(fim_item_t * item, const char * path) {
+void fim_path(const char * path) {
     ENTRY entry = { .key = (char *)path, .data = NULL };
 
     if (hsearch(entry, FIND)) {
@@ -105,7 +105,7 @@ void fim_path(fim_item_t * item, const char * path) {
 
     switch (buf.st_mode & S_IFMT) {
     case S_IFDIR:
-        fim_dir(item, fd, path);
+        fim_dir(fd, path);
         break;
 
     case S_IFREG:
@@ -118,7 +118,7 @@ void fim_path(fim_item_t * item, const char * path) {
     }
 }
 
-void fim_dir(fim_item_t * item, int fd, const char * path) {
+void fim_dir(int fd, const char * path) {
     DIR * dir = fdopendir(fd);
 
     if (dir == NULL) {
@@ -130,7 +130,7 @@ void fim_dir(fim_item_t * item, int fd, const char * path) {
             if (!loop_path(entry->d_name)) {
                 char lpath[PATH_MAX];
                 snprintf(lpath, PATH_MAX, "%s%s%s", path, (path[strlen(path) - 1] == '/') ? "" : "/", entry->d_name);
-                fim_link(item, lpath);
+                fim_link(lpath);
                 sched_yield();
             }
         }

@@ -14,7 +14,7 @@ static void parse_root(yaml_document_t * document);
 static void parse_logcollector(yaml_document_t * document, yaml_node_t * node);
 static void add_logfile(const char * file);
 static void parse_fim(yaml_document_t * document, yaml_node_t * node);
-static void add_fim(const char * path, int follow_links);
+static void add_fim(const char * path);
 
 int parse_config() {
     int error = 0;
@@ -125,51 +125,27 @@ void parse_fim(yaml_document_t * document, yaml_node_t * node) {
             for sequence(i, value) {
                 yaml_node_t * item = yaml_document_get_node(document, *i);
 
-                if (item->type != YAML_MAPPING_NODE) {
+                if (item->type != YAML_SCALAR_NODE) {
                     print_warn("Invalid node at %s:%lu", CONFIG_FILE, line(item));
                     continue;
                 }
 
-                char * path = NULL;
-                int follow_links = 0;
+                add_fim(scalar(item));
+            }
+        } else if (strcmp(skey, "follow_links") == 0) {
+            if (value->type != YAML_SCALAR_NODE) {
+                print_warn("Invalid node at %s:%lu", CONFIG_FILE, line(value));
+                continue;
+            }
 
-                for mapping(j, item) {
-                    yaml_node_t * key = yaml_document_get_node(document, j->key);
-                    yaml_node_t * value = yaml_document_get_node(document, j->value);
-                    char * skey = scalar(key);
+            char *svalue = scalar(value);
 
-                    if (strcmp(skey, "path") == 0) {
-                        if (value->type != YAML_SCALAR_NODE) {
-                            print_warn("Invalid node at %s:%lu", CONFIG_FILE, line(value));
-                            continue;
-                        }
-
-                        path = scalar(value);
-                    } else if (strcmp(skey, "follow_links") == 0) {
-                        if (value->type != YAML_SCALAR_NODE) {
-                            print_warn("Invalid node at %s:%lu", CONFIG_FILE, line(value));
-                            continue;
-                        }
-
-                        char *svalue = scalar(value);
-
-                        if (strcmp(svalue, "yes") == 0) {
-                            follow_links = 1;
-                        } else if (strcmp(svalue, "no") == 0) {
-                            follow_links = 0;
-                        } else {
-                            print_warn("Invalid value '%s' at %s:%lu", svalue, CONFIG_FILE, line(value));
-                        }
-                    } else {
-                        print_warn("Unknown element '%s' at %s:%lu", skey, CONFIG_FILE, line(key));
-                    }
-                }
-
-                if (path == NULL) {
-                    print_warn("FIM item path not defined, near %s:%lu", CONFIG_FILE, line(item));
-                } else {
-                    add_fim(path, follow_links);
-                }
+            if (strcmp(svalue, "yes") == 0) {
+                fim.follow_links = 1;
+            } else if (strcmp(svalue, "no") == 0) {
+                fim.follow_links = 0;
+            } else {
+                print_warn("Invalid value '%s' at %s:%lu", svalue, CONFIG_FILE, line(value));
             }
         } else if (strcmp(skey, "size_limit") == 0) {
             char * svalue = scalar(value);
@@ -212,7 +188,7 @@ void parse_fim(yaml_document_t * document, yaml_node_t * node) {
     }
 }
 
-void add_fim(const char * path, int follow_links) {
+void add_fim(const char * path) {
     for (unsigned i = 0; i < fim.length; i++) {
         if (strcmp(fim.items[i].path, path) == 0) {
             print_warn("Duplicate FIM stanza: %s", path);
@@ -225,5 +201,4 @@ void add_fim(const char * path, int follow_links) {
     memset(fim.items + last, 0, sizeof(fim_item_t));
 
     fim.items[last].path = strdup(path);
-    fim.items[last].follow_links = follow_links;
 }

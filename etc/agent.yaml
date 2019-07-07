@@ -9,6 +9,7 @@ logcollector:
     - /dev
 fim:
   size_limit: 1G
+  max_files: 100000
+  follow_links: no
   items:
-    - path: /etc
-      follow_links: no
+    - /etc

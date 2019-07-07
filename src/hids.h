@@ -67,7 +67,6 @@ typedef struct {
 typedef struct {
     char * path;
     unsigned int warn:1;
-    unsigned int follow_links:1;
 } fim_item_t;
 
 typedef struct {
@@ -77,6 +76,7 @@ typedef struct {
     unsigned nfiles;
     long size_limit;
     unsigned long max_files;
+    unsigned int follow_links:1;
 } fim_t;
 
 extern logcollector_t logcollector;

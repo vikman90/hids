@@ -76,6 +76,7 @@ typedef struct {
     char ** files;
     unsigned nfiles;
     long size_limit;
+    unsigned long max_files;
 } fim_t;
 
 extern logcollector_t logcollector;

@@ -196,6 +196,16 @@ void parse_fim(yaml_document_t * document, yaml_node_t * node) {
                     print_warn("Invalid value '%s' at %s:%lu", svalue, CONFIG_FILE, line(value));
                 }
             }
+        } else if (strcmp(skey, "max_files") == 0) {
+            char * svalue = scalar(value);
+            char * end;
+            unsigned long max = strtoul(svalue, &end, 10);
+
+            if (max == ULONG_MAX || *end) {
+                print_warn("Invalid value '%s' at %s:%lu", svalue, CONFIG_FILE, line(value));
+            }
+
+            fim.max_files = max;
         } else {
             print_warn("Unknown element '%s' at %s:%lu", skey, CONFIG_FILE, line(key));
         }

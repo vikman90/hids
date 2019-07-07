@@ -23,10 +23,14 @@ int fim_main() {
         fim.size_limit = 1073741824;
     }
 
+    if (fim.max_files == 0) {
+        fim.max_files = 100000;
+    }
+
     for (;;) {
         struct timespec tp0, tp1;
 
-        hcreate(1000000);
+        hcreate(fim.max_files);
         clock_gettime(CLOCK_MONOTONIC, &tp0);
 
         for (unsigned i = 0; i < fim.length; i++) {
@@ -127,6 +131,7 @@ void fim_dir(fim_item_t * item, int fd, const char * path) {
                 char lpath[PATH_MAX];
                 snprintf(lpath, PATH_MAX, "%s%s%s", path, (path[strlen(path) - 1] == '/') ? "" : "/", entry->d_name);
                 fim_link(item, lpath);
+                sched_yield();
             }
         }
     }
@@ -199,7 +204,10 @@ void fim_add(const char * path) {
     fim.files[last] = strdup(path);
 
     ENTRY entry = { .key = fim.files[last], .data = NULL };
-    hsearch(entry, ENTER);
+    if (hsearch(entry, ENTER) == NULL) {
+        print_error("Scan exceeded the file limit (%lu)", fim.max_files);
+        exit(EXIT_FAILURE);
+    }
 }
 
 void fim_free() {

@@ -1,6 +1,6 @@
 /* June 21, 2019 */
 
-#include "tree.h"
+#include "hids.h"
 
 static const char * config_path;
 const char * argv0;

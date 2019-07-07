@@ -1,6 +1,6 @@
 /* June 23, 2019 */
 
-#include "tree.h"
+#include "hids.h"
 
 module_t modules[] = {
     { .name = "fim", .main = fim_main },

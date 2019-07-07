@@ -1,7 +1,7 @@
 /* June 23, 2019 */
 
-#ifndef TREE_H
-#define TREE_H
+#ifndef HIDS_H
+#define HIDS_H
 
 #include <stdlib.h>
 #include <stdio.h>

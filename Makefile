@@ -1,6 +1,6 @@
 # June 23, 2019
 
-CFLAGS := -O2 -g
+CFLAGS := -O2 -g -std=c99
 CFLAGS += -Wall -Wextra -pipe
 # CFLAGS += -fsanitize=address
 LFLAGS := -O2 -g

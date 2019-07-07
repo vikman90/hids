@@ -3,6 +3,10 @@
 #ifndef HIDS_H
 #define HIDS_H
 
+#define _XOPEN_SOURCE 700
+#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -19,6 +23,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/prctl.h>
+#include <sys/select.h>
 #include <dirent.h>
 #include <pwd.h>
 #include <grp.h>

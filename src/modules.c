@@ -4,23 +4,6 @@
 
 void report() {
     exit(EXIT_SUCCESS);
-
-    while (1) {
-        unsigned int x;
-        getrandom(&x, sizeof(x), 0);
-        x = (double)x / UINT_MAX * 50;
-
-        const char * MESSAGE = "Hello world.";
-        cJSON * root = cJSON_CreateObject();
-        cJSON_AddStringToObject(root, "message", MESSAGE);
-        cJSON_AddNumberToObject(root, "data", x);
-        char * payload = cJSON_PrintUnformatted(root);
-        printf("%s\n", payload);
-        free(payload);
-        cJSON_Delete(root);
-
-        dispatch_socket(60);
-    }
 }
 
 void dispatch_socket(time_t timeout_sec) {

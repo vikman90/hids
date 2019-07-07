@@ -39,8 +39,6 @@ int main(int argc, char ** argv) {
         for (module_t * m = modules; m->name; m++) {
             if (strcmp(argv[optind], m->name) == 0) {
                 cur_module = m;
-                m->sock = 3;
-                cloexec(m->sock);
                 setlinebuf(stdout);
                 exit(m->main());
             }

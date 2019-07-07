@@ -21,7 +21,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <sys/prctl.h>
 #include <sys/select.h>
 #include <dirent.h>
@@ -50,7 +49,6 @@ typedef struct module_t {
     pid_t pid;
     FILE * stdin;
     FILE * stdout;
-    int sock;
 } module_t;
 
 typedef struct {
@@ -106,7 +104,7 @@ void set_handler(int signum, void (*handler)(int));
 void kill_modules();
 void spawn(module_t * m);
 void dispatch();
-void dispatch_socket(time_t timeout_sec);
+void dispatch_stdin(time_t timeout_sec);
 void watchdog(module_t * m);
 __attribute__((noreturn)) void critical(const char * s);
 void cloexec(int fd);

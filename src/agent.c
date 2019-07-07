@@ -57,14 +57,9 @@ void kill_modules() {
 void spawn(module_t * m) {
     int pipein[2];
     int pipeout[2];
-    int sock[2];
 
     if (pipe(pipein) == -1 || pipe(pipeout) == -1) {
         critical("Cannot create a pipe");
-    }
-
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sock) == -1) {
-        critical("Cannot create a socket");
     }
 
     m->pid = fork();
@@ -90,10 +85,6 @@ void spawn(module_t * m) {
         close(pipeout[0]);
         close(pipeout[1]);
 
-        dup2(sock[0], 3);
-        close(sock[0]);
-        close(sock[1]);
-
         // Run
         execl(argv0, argv0, m->name, NULL);
         _exit(127);
@@ -118,10 +109,6 @@ void spawn(module_t * m) {
 
         cloexec(pipeout[0]);
         close(pipeout[1]);
-
-        close(sock[0]);
-        m->sock = sock[1];
-        cloexec(m->sock);
     }
 }
 
@@ -188,7 +175,6 @@ void watchdog(module_t * m) {
     default:
         fclose(m->stdin);
         fclose(m->stdout);
-        close(m->sock);
 
         if (WIFEXITED(status)) {
             if (WEXITSTATUS(status) != 0) {

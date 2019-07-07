@@ -46,7 +46,7 @@ int logcollector_main() {
             fclose(fp);
         }
 
-        dispatch_socket(1);
+        dispatch_stdin(1);
     }
 
     return EXIT_SUCCESS;

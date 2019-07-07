@@ -37,7 +37,7 @@ int fim_main() {
         print_info("FIM scan ended. Files: %u. Time: %f seconds.", fim.nfiles, time_diff(tp1, tp0));
         fim_free();
         hdestroy();
-        dispatch_socket(60);
+        dispatch_stdin(60);
     }
 
     return EXIT_SUCCESS;

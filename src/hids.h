@@ -26,7 +26,7 @@
 #include <yaml.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 
 #define print_info(msg, ...) fprintf(stderr, "\e[94m%s: \e[92mINFO:\e[39m " msg "\n", cur_module->name, ##__VA_ARGS__)
 #define print_warn(msg, ...) fprintf(stderr, "\e[94m%s: \e[93mWARN:\e[39m " msg "\n", cur_module->name, ##__VA_ARGS__)

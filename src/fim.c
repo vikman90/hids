@@ -30,7 +30,10 @@ int fim_main() {
     for (;;) {
         struct timespec tp0, tp1;
 
-        hcreate(fim.max_files);
+        if (fim.follow_links) {
+            hcreate(fim.max_files);
+        }
+        
         clock_gettime(CLOCK_MONOTONIC, &tp0);
 
         for (unsigned i = 0; i < fim.length; i++) {
@@ -39,8 +42,12 @@ int fim_main() {
 
         clock_gettime(CLOCK_MONOTONIC, &tp1);
         print_info("FIM scan ended. Files: %u. Time: %f seconds.", fim.nfiles, time_diff(tp1, tp0));
-        fim_free();
-        hdestroy();
+        
+        if (fim.follow_links) {
+            fim_free();
+            hdestroy();
+        }
+
         dispatch_stdin(60);
     }
 
@@ -79,14 +86,18 @@ int fim_link(const char * path) {
 }
 
 void fim_path(const char * path) {
-    ENTRY entry = { .key = (char *)path, .data = NULL };
+    if (fim.follow_links) {
+        ENTRY entry = { .key = (char *)path, .data = NULL };
 
-    if (hsearch(entry, FIND)) {
-        print_info("Duplicate item: '%s'", path);
-        return;
+        if (hsearch(entry, FIND)) {
+            print_info("Duplicate item: '%s'", path);
+            return;
+        }
     }
 
-    fim_add(path);
+    if (fim.follow_links) {
+        fim_add(path);
+    }
 
     /* O_NONBLOCK prevents open() from blocking on FIFO files */
     int fd = open(path, O_RDONLY | O_NONBLOCK);
@@ -204,6 +215,7 @@ void fim_add(const char * path) {
     fim.files[last] = strdup(path);
 
     ENTRY entry = { .key = fim.files[last], .data = NULL };
+
     if (hsearch(entry, ENTER) == NULL) {
         print_error("Scan exceeded the file limit (%lu)", fim.max_files);
         exit(EXIT_FAILURE);

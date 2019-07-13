@@ -22,3 +22,7 @@ fim:
     - /opt
     - /sbin
     - /usr
+client:
+  servers:
+    - address: localhost
+      port: 1517

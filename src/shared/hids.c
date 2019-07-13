@@ -1,25 +1,6 @@
-/* June 23, 2019 */
+/* July 13, 2019 */
 
 #include "hids.h"
-
-module_t modules[] = {
-    { .name = "fim", .main = fim_main },
-    { .name = "logcollector", .main = logcollector_main },
-    { .name = "sca", .main = sca_main },
-    { .name = "open-scap", .main = openscap_main },
-    { .name = "osquery", .main = osquery_main },
-    { .name = "rootcheck", .main = rootcheck_main },
-    { .name = "cis-cat", .main = ciscat_main },
-    { .name = "inventory", .main = inventory_main },
-    { .name = "aws", .main = aws_main },
-    { .name = "azure", .main = azure_main },
-    { .name = "docker", .main = docker_main },
-    { .name = "command", .main = command_main },
-    { .name = NULL, NULL }
-};
-
-static module_t agent = { .name = "agent" };
-module_t * cur_module = &agent;
 
 void handler(int signum) {
     switch (signum) {
@@ -264,4 +245,31 @@ int file_sha256(int fd, char sum[SHA256_LEN]) {
 
     sum[SHA256_LEN - 1] = '\0';
     return 0;
+}
+
+void dispatch_stdin(time_t timeout_sec) {
+    char buffer[BUFFER_SIZE];
+    fd_set rfds;
+    struct timeval timeout = { .tv_sec = timeout_sec };
+
+    FD_ZERO(&rfds);
+    FD_SET(STDIN_FILENO, &rfds);
+
+    switch (select(STDIN_FILENO + 1, &rfds, NULL, NULL, &timeout)) {
+    case -1:
+        critical("select");
+
+    case 0:
+        break;
+
+    default:
+        switch (read(STDIN_FILENO, buffer, sizeof(buffer))) {
+        case -1:
+            critical("Cannot read stdin");
+
+        case 0:
+            // Agent exited. Printing a message would raise SIGPIPE.
+            exit(EXIT_SUCCESS);
+        }
+    }
 }

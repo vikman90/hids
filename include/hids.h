@@ -43,6 +43,9 @@
 #define BUFFER_SIZE 4096
 #define CONFIG_FILE "etc/agent.yaml"
 #define SHA256_LEN 65
+#define DEFAULT_PORT 1517
+
+#include "agent.h"
 
 typedef struct module_t {
     char * name;
@@ -52,59 +55,10 @@ typedef struct module_t {
     FILE * stdout;
 } module_t;
 
-typedef struct {
-    char * path;
-    long offset;
-    ino_t inode;
-    unsigned int error:1;
-    unsigned int warn:1;
-} logfile_t;
-
-typedef struct {
-    logfile_t * logfiles;
-    unsigned length;
-} logcollector_t;
-
-typedef struct {
-    char * path;
-    unsigned int warn:1;
-} fim_item_t;
-
-typedef struct {
-    fim_item_t * items;
-    unsigned length;
-    char ** files;
-    unsigned nfiles;
-    long size_limit;
-    unsigned long max_files;
-    int inotify_fd;
-    char ** inotify_wd_array;
-    int inotify_wd_top;
-    unsigned int follow_links:1;
-    unsigned int real_time:1;
-} fim_t;
-
-extern logcollector_t logcollector;
-extern fim_t fim;
-
 extern module_t modules[];
 extern module_t * cur_module;
 extern const char * argv0;
 
-int fim_main();
-int logcollector_main();
-int sca_main();
-int openscap_main();
-int osquery_main();
-int rootcheck_main();
-int ciscat_main();
-int inventory_main();
-int aws_main();
-int azure_main();
-int docker_main();
-int command_main();
-
-void report();
 void handler(int signum);
 void set_handler(int signum, void (*handler)(int));
 void kill_modules();

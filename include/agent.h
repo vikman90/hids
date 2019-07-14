@@ -3,9 +3,6 @@
 #ifndef AGENT_H
 #define AGENT_H
 
-#include "fim.h"
-#include "logcollector.h"
-
 typedef struct {
     char * address;
     unsigned short port;

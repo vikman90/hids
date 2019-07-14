@@ -46,6 +46,9 @@
 #define DEFAULT_PORT 1517
 
 #include "agent.h"
+#include "config.h"
+#include "fim.h"
+#include "logcollector.h"
 
 typedef struct module_t {
     char * name;
@@ -71,7 +74,6 @@ void cloexec(int fd);
 void nonblock(int fd);
 void set_name(const char * name);
 void set_cwd();
-int parse_config();
 int file_sha256(int fd, char sum[SHA256_LEN]);
 
 #endif

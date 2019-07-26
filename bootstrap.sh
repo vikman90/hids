@@ -7,7 +7,7 @@ platform() {
         . /etc/os-release
 
         case $ID in
-        debian|ubuntu)
+        debian|ubuntu|raspbian)
             echo "linux-deb"
             return 0
             ;;
@@ -53,7 +53,7 @@ install_cjson() {
 case $PLATFORM in
 linux-deb)
     apt-get update
-    apt-get install -y gcc make libssl-dev libyaml-dev curl || exit $?
+    apt-get install -y g++ make libssl-dev libyaml-dev curl || exit $?
 
     apt-get install -y libcjson-dev
 
@@ -68,7 +68,7 @@ linux-deb)
     esac
     ;;
 linux-rpm)
-    yum install -y gcc make openssl-devel libyaml-devel curl || exit $?
+    yum install -y g++ make openssl-devel libyaml-devel curl || exit $?
     install_cjson || exit $?
     ;;
 

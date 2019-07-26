@@ -1,3 +1,5 @@
 nohup.out
-agent
-*.o
+bin/agent
+bin/manager
+bin/store
+src/**/*.o

@@ -1,6 +1,6 @@
 // July 26, 2019
 
-#include "exception.h"
+#include <shared.h>
 
 Exception::Exception(const string & func, const string & file, int lineno, const string & message, int _errno) : func(func), file(file), lineno(lineno), message(message), _errno(_errno) { }
 

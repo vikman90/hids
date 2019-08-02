@@ -3,8 +3,6 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
-#include "shared.h"
-
 #define HERE __func__, __FILE__, __LINE__
 
 class Exception {

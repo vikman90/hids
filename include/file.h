@@ -3,8 +3,6 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include "shared.h"
-
 class File {
 public:
     enum Mode { Read, Write, Append };

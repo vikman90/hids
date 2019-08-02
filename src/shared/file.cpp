@@ -1,6 +1,6 @@
 // July 26, 2019
 
-#include "file.h"
+#include <shared.h>
 
 File::File(const char * path, File::Mode mode) {
     file = fopen(path, mode == Read ? "r" : mode == Write ? "w" : "a");

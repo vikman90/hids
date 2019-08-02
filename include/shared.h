@@ -12,9 +12,10 @@
 
 using namespace std;
 
+#include "file.h"
 #include "config.h"
 #include "exception.h"
-#include "file.h"
 #include "logger.h"
+#include "module.h"
 
 #endif

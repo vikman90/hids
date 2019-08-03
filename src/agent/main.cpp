@@ -3,17 +3,19 @@
 #include "agent.h"
 
 int main() {
+    Module * logc = NULL;
 
     try {
         Config config("etc/agent.yaml");
 
-        Module * logc = new Logcollector;
+        logc = new Logcollector;
         logc->load(config);
-        delete logc;
-
+        logc->run();
     } catch (Exception & e) {
         cerr << e << endl;
     }
+
+    delete logc;
 
     return 0;
 }

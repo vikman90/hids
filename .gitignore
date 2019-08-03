@@ -3,3 +3,4 @@ bin/agent
 bin/manager
 bin/store
 src/**/*.o
+.vscode

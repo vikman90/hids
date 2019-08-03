@@ -2,11 +2,12 @@ logcollector:
   files:
     - /var/log/secure
     - /var/log/messages
-    - /var/log/auth.log
+    - /var/log/*.log
     - /var/log/syslog
     - /root/example.log
     - /proc/self/fd/0
     - /dev
+
 fim:
   size_limit: 1G
   max_files: 100000

@@ -7,6 +7,13 @@
 #include <sstream>
 #include <cstdlib>
 #include <cstdio>
+#include <ctime>
+#include <vector>
+#include <list>
+#include <glob.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <yaml.h>
 

@@ -11,6 +11,8 @@ public:
 
     friend ostream & operator << (ostream & os, const Exception & e);
 
+    static bool trace;
+
 private:
     string func;
     string file;

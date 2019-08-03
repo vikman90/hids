@@ -11,6 +11,7 @@ public:
     ~File();
 
     FILE * getPointer();
+    struct stat stat() const;
 
 private:
     FILE * file;

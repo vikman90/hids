@@ -7,8 +7,8 @@ Logcollector::Logcollector() : Module("logcollector") {
 }
 
 Logcollector::~Logcollector() {
-    for (LogItem * item : items) {
-        delete item;
+    for (File * file : files) {
+        delete file;
     }
 }
 
@@ -42,7 +42,7 @@ void Logcollector::load(Config & config) {
                                 for (yaml_node_item_t & item : files) {
                                     try {
                                         char * pattern = Scalar(config[item]);
-                                        items.push_back(new LogItem(pattern));
+                                        addPattern(pattern);
                                     } catch (SemanticException & e) {
                                         config.addIssue(e);
                                     }
@@ -64,39 +64,61 @@ void Logcollector::load(Config & config) {
 }
 
 void Logcollector::run() {
-    for (LogItem * item : items) {
-        item->expand();
-    }
+    checkFiles();
 }
 
-LogItem::~LogItem() {
-    for (File * file : files) {
-        delete file;
-    }
-}
-
-void LogItem::expand() {
-    try {
-        Wildcard wildcard(pattern);
-
-        for (char * path : wildcard) {
-            try {
-                File * file = new File(path);
-
-                if (S_ISREG(file->stat().st_mode)) {
-                    infoLog  << "Reading file " << path;
-                    files.push_back(file);
-                } else {
-                    warnLog << path << " is not a file";
-                    delete file;
-                }
-            } catch (Exception & e) {
-                errorLog << e;
-            }
+void Logcollector::addPattern(const char * pattern) {
+    for (string & p : patterns) {
+        if (p == pattern) {
+            debugLog << "Duplicate log entry: " << pattern;
+            return;
         }
-    } catch (NoMatch) {
-        debugLog << "Pattern \"" << pattern << "\" matched no files";
-    } catch (Exception & e) {
-        errorLog << e;
     }
+
+    patterns.push_back(pattern);
+}
+
+void Logcollector::checkFiles() {
+    Wildcard wildcard;
+
+    for (string pattern : patterns) {
+        try {
+            wildcard.append(pattern);
+        } catch (Exception & e) {
+            errorLog << e;
+        }
+    }
+
+    for (list<File *>::iterator it = files.begin(); it != files.end();) {
+        if (!wildcard.find((*it)->getPath())) {
+            it = removeFile(it);
+        } else {
+            ++it;
+        }
+    }
+
+    for (char * path : wildcard) {
+        addFile(path);
+    }
+}
+
+void Logcollector::addFile(const char * path) {
+    for (list<File *>::iterator it = files.begin(); it != files.end(); ++it) {
+        if ((*it)->getPath() == path) {
+            return;
+        }
+    }
+
+    try {
+        files.push_back(new File(path));
+        infoLog  << "Reading file: " << path;
+    } catch (Exception & e) {
+        warnLog << e;
+    }
+}
+
+list<File *>::iterator Logcollector::removeFile(list<File *>::iterator it) {
+    infoLog << "Closing file: " << (*it)->getPath();
+    delete * it;
+    return files.erase(it);
 }

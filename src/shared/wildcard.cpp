@@ -3,7 +3,36 @@
 #include <shared.h>
 
 Wildcard::Wildcard(const string & pattern) {
-    switch (glob(pattern.c_str(), 0, nullptr, &globbuf)) {
+    glob(pattern, 0);
+}
+
+Wildcard::~Wildcard() {
+    globfree(&globbuf);
+}
+
+void Wildcard::append(const string & pattern) {
+    glob(pattern, GLOB_APPEND);
+}
+
+bool Wildcard::find(const string & path) {
+    for (size_t i = 0; i < globbuf.gl_pathc; ++i) {
+        if (path == globbuf.gl_pathv[i]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+char ** Wildcard::begin() {
+    return globbuf.gl_pathv;
+}
+char ** Wildcard::end() {
+    return globbuf.gl_pathv + globbuf.gl_pathc;
+}
+
+void Wildcard::glob(const string & pattern, int flags) {
+    switch (::glob(pattern.c_str(), flags, nullptr, &globbuf)) {
     case 0:
         break;
 
@@ -14,17 +43,6 @@ Wildcard::Wildcard(const string & pattern) {
         throw Aborted(HERE);
 
     case GLOB_NOMATCH:
-        throw NoMatch(HERE);
+        break;
     }
-}
-
-Wildcard::~Wildcard() {
-    globfree(&globbuf);
-}
-
-char ** Wildcard::begin() {
-    return globbuf.gl_pathv;
-}
-char ** Wildcard::end() {
-    return globbuf.gl_pathv + globbuf.gl_pathc;
 }

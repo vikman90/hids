@@ -5,13 +5,17 @@
 
 class Wildcard {
 public:
-    Wildcard(const string & pattern);
+    Wildcard(const string & pattern = "");
     ~Wildcard();
 
+    void append(const string & pattern);
+    bool find(const string & path);
     char ** begin();
     char ** end();
 
 private:
+    void glob(const string & pattern, int flags);
+
     glob_t globbuf;
 };
 
@@ -23,11 +27,6 @@ public:
 class Aborted : Exception {
 public:
     Aborted(const string & func, const string & file, int line) : Exception(func, file, line, "Read error") { }
-};
-
-class NoMatch : Exception {
-public:
-    NoMatch(const string & func, const string & file, int line) : Exception(func, file, line, "No found matches") { }
 };
 
 #endif

@@ -12,8 +12,10 @@ public:
 
     FILE * getPointer();
     struct stat stat() const;
+    const string & getPath() const;
 
 private:
+    string path;
     FILE * file;
 };
 

@@ -18,18 +18,6 @@
 //     unsigned int warn:1;
 // };
 
-class LogItem {
-public:
-    LogItem(const char * pattern) : pattern(pattern) { }
-    ~LogItem();
-
-    void expand();
-
-private:
-    string pattern;
-    vector<File *> files;
-};
-
 class Logcollector : public Module {
 public:
     Logcollector();
@@ -39,7 +27,13 @@ public:
     void run();
 
 private:
-    vector<LogItem *> items;
+    void addPattern(const char * pattern);
+    void addFile(const char * path);
+    list<File *>::iterator removeFile(list<File *>::iterator it);
+    void checkFiles();
+
+    vector<string> patterns;
+    list<File *> files;
 };
 
 #endif

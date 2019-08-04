@@ -2,13 +2,20 @@
 
 #include <shared.h>
 
-File::File(const char * path, File::Mode mode) {
+File::File(const char * path, File::Mode mode) : path(path) {
     file = fopen(path, mode == Read ? "r" : mode == Write ? "w" : "a");
 
     if (file == NULL) {
         ostringstream stream;
         stream << "Cannot open file \"" << path << "\"";
         throw Exception(HERE, stream.str(), errno);
+    }
+
+    if (!S_ISREG(stat().st_mode)) {
+        ostringstream stream;
+        fclose(file);
+        stream << "Path \"" << path << "\" is not a regular regular file";
+        throw Exception(HERE, stream.str());
     }
 }
 
@@ -28,4 +35,8 @@ struct stat File::stat() const {
     }
 
     return buf;
+}
+
+const string & File::getPath() const {
+    return path;
 }

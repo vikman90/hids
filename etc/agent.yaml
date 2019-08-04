@@ -4,7 +4,7 @@ logcollector:
     - /var/log/messages
     - /var/log/*.log
     - /var/log/syslog
-    - /root/example.log
+    - /root/example.*.log
     - /proc/self/fd/0
     - /dev
 

@@ -3,9 +3,14 @@
 CXXFLAGS := -O2 -g -std=c++11 -Iinclude
 CXXFLAGS += -Wall -Wextra -pipe
 # CXXFLAGS += -fsanitize=address
-LFLAGS := -O2 -g
+LDFLAGS := -O2 -g
 # LFLAGS += -fsanitize=address
-LIBS := -lyaml -lcrypto -lcjson
+LIBS := -lyaml -lcjson
+
+ifeq "$(OSTYPE)" "FreeBSD"
+CXXFLAGS += -I/usr/local/include
+LDFLAGS += -L/usr/local/lib
+endif
 
 TARGET := bin/agent
 
@@ -28,7 +33,7 @@ OBJECTS = $(AGENT_OBJECTS) $(LOGCOLLECTOR_OBJECTS) $(SHARED_OBJECTS)
 all: bin $(TARGET)
 
 bin/agent: $(AGENT_OBJECTS) $(LOGCOLLECTOR_OBJECTS) $(SHARED_OBJECTS)
-	$(CXX) $(LFLAGS) -o $@ $^ $(LIBS)
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 $(OBJECTS): $(SHARED_HEADERS)
 $(AGENT_OBJECTS): $(AGENT_HEADERS)

@@ -52,40 +52,26 @@ LogItem::~LogItem() {
 }
 
 void LogItem::expand() {
-    glob_t buf;
-    ostringstream stream;
+    try {
+        Wildcard wildcard(pattern);
 
-    switch (glob(pattern.c_str(), 0, NULL, &buf)) {
-    case 0:
-        break;
+        for (char * path : wildcard) {
+            try {
+                File * file = new File(path);
 
-    case GLOB_NOSPACE:
-        stream << "Cannot expand \"" << pattern << "\": out of memory";
-        throw Exception(HERE, stream.str());
-
-    case GLOB_ABORTED:
-        stream << "Cannot expand \"" << pattern << "\": read error";
-        throw Exception(HERE, stream.str());
-
-    case GLOB_NOMATCH:
-        return;
-    }
-
-    for (size_t i = 0; i < buf.gl_pathc; ++i) {
-        try {
-            File * file = new File(buf.gl_pathv[i]);
-
-            if (S_ISREG(file->stat().st_mode)) {
-                Logger(HERE, Info)  << "Reading file " << buf.gl_pathv[i];
-                files.push_back(file);
-            } else {
-                Logger(HERE, Warn) << buf.gl_pathv[i] << " is not a file";
-                delete file;
+                if (S_ISREG(file->stat().st_mode)) {
+                    Logger(HERE, Info)  << "Reading file " << path;
+                    files.push_back(file);
+                } else {
+                    Logger(HERE, Warn) << path << " is not a file";
+                    delete file;
+                }
+            } catch (Exception & e) {
+                Logger(HERE, Error) << e;
             }
-        } catch (Exception & e) {
-            Logger(HERE, Error) << e;
         }
+    } catch (NoMatch) {
+    } catch (Exception & e) {
+        Logger(HERE, Error) << e;
     }
-
-    globfree(&buf);
 }

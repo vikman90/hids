@@ -24,5 +24,6 @@ using namespace std;
 #include "exception.h"
 #include "logger.h"
 #include "module.h"
+#include "wildcard.h"
 
 #endif

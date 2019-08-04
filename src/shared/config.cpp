@@ -2,7 +2,7 @@
 
 #include <shared.h>
 
-Config::Config(const char * path) {
+Config::Config(const char * path) : path(path) {
     File file(path);
     Parser parser(file);
 
@@ -29,6 +29,16 @@ yaml_node_t * Config::root() {
     return root;
 }
 
+void Config::addIssue(const SemanticException & e) {
+    issues.push_back(e);
+}
+
+void Config::logIssues() {
+    for (SemanticException & issue : issues) {
+        warnLog << path << ":" << issue;
+    }
+}
+
 yaml_node_t * Config::operator [] (int index) {
     return yaml_document_get_node(&document, index);
 }
@@ -50,7 +60,7 @@ void Parser::load(yaml_document_t & document) {
 
 Scalar::Scalar(yaml_node_t * node) : node(node) {
     if (node->type != YAML_SCALAR_NODE) {
-        throw SemanticException(node->start_mark.line, "Expecting a map");
+        throw SemanticException(node->start_mark.line, "Expecting a scalar");
     }
 }
 
@@ -102,5 +112,10 @@ yaml_node_item_t * Sequence::end() {
 }
 
 int ConfigException::getLine() {
-    return line;
+    return line + 1;
+}
+
+ostream & operator << (ostream & os, const ConfigException & e) {
+    os << e.line + 1 << ": " << e.reason;
+    return os;
 }

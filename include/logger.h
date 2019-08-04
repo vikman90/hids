@@ -23,4 +23,9 @@ private:
     static LogLevel level_threshold;
 };
 
+#define errorLog Logger(HERE, Error)
+#define warnLog Logger(HERE, Warn)
+#define infoLog Logger(HERE, Info)
+#define debugLog Logger(HERE, Debug)
+
 #endif

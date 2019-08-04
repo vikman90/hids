@@ -13,29 +13,53 @@ Logcollector::~Logcollector() {
 }
 
 void Logcollector::load(Config & config) {
-    try {
-        Mapping components(config.root());
+    yaml_node_t * root;
 
-        for (yaml_node_pair_t pair : components) {
+    try {
+        root = config.root();
+    } catch (EmptyException) {
+        debugLog << "Configuration is empty";
+        return;
+    }
+
+    try {
+        Mapping components(root);
+
+        for (yaml_node_pair_t & pair : components) {
             string key = Scalar(config[pair.key]);
 
             if (key == "logcollector") {
-                Mapping options(config[pair.value]);
+                try {
+                    Mapping options(config[pair.value]);
 
-                for (yaml_node_pair_t pair : options) {
-                    string key = Scalar(config[pair.key]);
+                    for (yaml_node_pair_t & pair : options) {
+                        string key = Scalar(config[pair.key]);
 
-                    if (key == "files") {
-                        Sequence files(config[pair.value]);
+                        if (key == "files") {
+                            try {
+                                Sequence files(config[pair.value]);
 
-                        for (yaml_node_item_t item : files) {
-                            items.push_back(new LogItem(Scalar(config[item])));
+                                for (yaml_node_item_t & item : files) {
+                                    try {
+                                        char * pattern = Scalar(config[item]);
+                                        items.push_back(new LogItem(pattern));
+                                    } catch (SemanticException & e) {
+                                        config.addIssue(e);
+                                    }
+                                }
+                            } catch (SemanticException & e) {
+                                config.addIssue(e);
+                            }
                         }
                     }
+                } catch (SemanticException & e) {
+                    config.addIssue(e);
                 }
             }
         }
-    } catch (EmptyException) {
+
+    } catch (SemanticException & e) {
+        config.addIssue(e);
     }
 }
 
@@ -60,18 +84,19 @@ void LogItem::expand() {
                 File * file = new File(path);
 
                 if (S_ISREG(file->stat().st_mode)) {
-                    Logger(HERE, Info)  << "Reading file " << path;
+                    infoLog  << "Reading file " << path;
                     files.push_back(file);
                 } else {
-                    Logger(HERE, Warn) << path << " is not a file";
+                    warnLog << path << " is not a file";
                     delete file;
                 }
             } catch (Exception & e) {
-                Logger(HERE, Error) << e;
+                errorLog << e;
             }
         }
     } catch (NoMatch) {
+        debugLog << "Pattern \"" << pattern << "\" matched no files";
     } catch (Exception & e) {
-        Logger(HERE, Error) << e;
+        errorLog << e;
     }
 }

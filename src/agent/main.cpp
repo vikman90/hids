@@ -10,6 +10,7 @@ int main() {
 
         logc = new Logcollector;
         logc->load(config);
+        config.logIssues();
         logc->run();
     } catch (Exception & e) {
         cerr << e << endl;

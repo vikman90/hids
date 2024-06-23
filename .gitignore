@@ -1,3 +1,5 @@
 nohup.out
-agent
+bin/agent
 *.o
+build
+.vscode

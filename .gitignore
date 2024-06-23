@@ -3,3 +3,4 @@ bin/agent
 *.o
 build
 .vscode
+agent.log

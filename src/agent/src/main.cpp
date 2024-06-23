@@ -3,6 +3,8 @@
 #include <iostream>
 #include <module.hpp>
 #include <io.hpp>
+#include <config.h>
+#include <logger.hpp>
 
 using namespace std;
 
@@ -21,12 +23,14 @@ private:
 };
 
 int main() {
+    Logger::getInstance().setLogFile(LOG_PATH);
     BasicIO io;
 
     Dummy & dummy = Dummy::getInstance();
     dummy.setIO(io);
 
     dummy.start();
+    Logger::info("Agent started successfully");
     dummy.stop();
 
     return 0;

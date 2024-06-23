@@ -5,6 +5,7 @@
 #include <config.h>
 #include <logger.hpp>
 #include <logcollector.hpp>
+#include <fim.hpp>
 #include <config_parser.hpp>
 
 using namespace std;
@@ -16,12 +17,17 @@ int main() {
     Logcollector & logcollector = Logcollector::getInstance();
     logcollector.setIO(io);
 
+    FIM & fim = FIM::getInstance();
+    fim.setIO(io);
+
     ConfigParser config(CONFIG_PATH);
     config.parse();
 
     logcollector.start();
-    Logger::info("Agent started successfully");
+    fim.start();
+
     logcollector.stop();
+    fim.stop();
 
     return 0;
 }

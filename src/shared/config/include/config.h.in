@@ -2,3 +2,4 @@
 
 #define LOG_PATH "@LOG_PATH@"
 #define BUFFER_SIZE @BUFFER_SIZE@
+#define CONFIG_PATH "@CONFIG_PATH@"

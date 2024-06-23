@@ -9,5 +9,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(LOG_PATH "agent.log")
 set(BUFFER_SIZE 4096)
+set(CONFIG_PATH "etc/agent.yaml")
 
 add_subdirectory(src)

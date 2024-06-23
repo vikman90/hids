@@ -5,6 +5,7 @@
 #include <config.h>
 #include <logger.hpp>
 #include <logcollector.hpp>
+#include <config_parser.hpp>
 
 using namespace std;
 
@@ -15,13 +16,8 @@ int main() {
     Logcollector & logcollector = Logcollector::getInstance();
     logcollector.setIO(io);
 
-    logcollector.addLogfile("/var/log/secure");
-    logcollector.addLogfile("/var/log/messages");
-    logcollector.addLogfile("/var/log/auth.log");
-    logcollector.addLogfile("/var/log/syslog");
-    logcollector.addLogfile("/root/example.log");
-    logcollector.addLogfile("/proc/self/fd/0");
-    logcollector.addLogfile("/dev");
+    ConfigParser config(CONFIG_PATH);
+    config.parse();
 
     logcollector.start();
     Logger::info("Agent started successfully");

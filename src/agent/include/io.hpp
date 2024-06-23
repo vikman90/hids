@@ -9,11 +9,11 @@ struct IModuleIO {
 
     virtual void pushStateful(const std::string & data) = 0;
     virtual void pushStateless(const std::string & data) = 0;
-    virtual std::string popCommand() = 0;
+    virtual std::string popCommand(int timeout_sec = 1) = 0;
 };
 
 struct BasicIO : IModuleIO {
     void pushStateful(const std::string & data);
     void pushStateless(const std::string & data);
-    std::string popCommand();
+    std::string popCommand(int timeout_sec = 1);
 };
